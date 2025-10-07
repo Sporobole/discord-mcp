@@ -70,14 +70,14 @@ public class SecurityConfig {
                 System.out.println("Bearer token filter: " + method + " " + requestUri);
                 System.out.println("Authorization header: " + httpRequest.getHeader("Authorization"));
 
-                // Skip authentication for health check and error page
-                if (requestUri.equals("/actuator/health") || requestUri.equals("/error")) {
-                    chain.doFilter(request, response);
-                    return;
-                }
+                    // Skip authentication for health check and error page
+                    if (requestUri.equals("/actuator/health") || requestUri.equals("/error")) {
+                        chain.doFilter(request, response);
+                        return;
+                    }
 
-                // Only authenticate MCP endpoint
-                if (requestUri.equals("/mcp") || requestUri.startsWith("/mcp?")) {
+                    // Only authenticate SSE MCP endpoints
+                    if (requestUri.equals("/sse") || requestUri.startsWith("/mcp/")) {
                     String authHeader = httpRequest.getHeader("Authorization");
 
                     if (authHeader == null || !authHeader.startsWith("Bearer ")) {
