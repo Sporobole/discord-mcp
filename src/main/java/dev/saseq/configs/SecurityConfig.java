@@ -76,8 +76,8 @@ public class SecurityConfig {
                     return;
                 }
 
-                // Only authenticate MCP endpoints
-                if (requestUri.equals("/sse") || requestUri.startsWith("/mcp/")) {
+                // Only authenticate MCP endpoint
+                if (requestUri.equals("/mcp") || requestUri.startsWith("/mcp?")) {
                     String authHeader = httpRequest.getHeader("Authorization");
 
                     if (authHeader == null || !authHeader.startsWith("Bearer ")) {
