@@ -1,6 +1,8 @@
 services:
   discord-mcp:
-    image: saseq/discord-mcp:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: discord-mcp-server
     restart: unless-stopped
     environment:
