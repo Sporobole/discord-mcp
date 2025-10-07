@@ -70,8 +70,8 @@ public class SecurityConfig {
                 System.out.println("Bearer token filter: " + method + " " + requestUri);
                 System.out.println("Authorization header: " + httpRequest.getHeader("Authorization"));
 
-                // Skip authentication for health check
-                if (requestUri.equals("/actuator/health")) {
+                // Skip authentication for health check and error page
+                if (requestUri.equals("/actuator/health") || requestUri.equals("/error")) {
                     chain.doFilter(request, response);
                     return;
                 }
