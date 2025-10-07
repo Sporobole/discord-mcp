@@ -20,123 +20,128 @@
 
 ## 📖 Description
 
-A [Model Context Protocol (MCP)](https://modelcontextprotocol.io/introduction) server for the Discord API [(JDA)](https://jda.wiki/), 
-allowing seamless integration of Discord Bot with MCP-compatible applications like Claude Desktop.
+A [Model Context Protocol (MCP)](https://modelcontextprotocol.io/introduction) server for the Discord API [(JDA)](https://jda.wiki/),
+allowing seamless integration of Discord Bot with MCP-compatible applications.
+
+This server supports **HTTP/SSE (Server-Sent Events)** transport with **Bearer token authentication**, making it suitable for production deployments behind reverse proxies and platforms like Coolify.
 
 Enable your AI assistants to seamlessly interact with Discord. Manage channels, send messages, and retrieve server information effortlessly. Enhance your Discord experience with powerful automation capabilities.
 
 
 ## 🔬 Installation
 
-### ► 🐳 Docker Installation (Recommended)
-> NOTE: Docker installation is required. Full instructions can be found on [docker.com](https://www.docker.com/products/docker-desktop/).
-```json
-{
-  "mcpServers": {
-    "mcp-server": {
-      "command": "docker",
-      "args": [
-        "run", "--rm", "-i",
-        "-e", "DISCORD_TOKEN=<YOUR_DISCORD_BOT_TOKEN>",
-        "-e", "DISCORD_GUILD_ID=<OPTIONAL_DEFAULT_SERVER_ID>",
-        "saseq/discord-mcp:latest"
-      ]
-    }
-  }
-}
+### 🔑 Prerequisites
+
+Before installation, you'll need:
+
+1. **Discord Bot Token**: Create a bot at [Discord Developer Portal](https://discordjs.guide/preparations/setting-up-a-bot-application.html#creating-your-bot)
+2. **Bearer Token**: Generate a secure random token for authentication:
+
+```bash
+# Linux/macOS
+openssl rand -base64 32
+
+# Or using Python
+python3 -c "import secrets; print(secrets.token_urlsafe(32))"
+
+# Windows PowerShell
+[Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Maximum 256 }))
 ```
 
-<details>
-    <summary style="font-size: 1.35em; font-weight: bold;">
-        🔧 Manual Installation
-    </summary>
+⚠️ **Security**: Keep your tokens secure and never commit them to version control!
 
-#### Clone the repository
-```bash
-git clone https://github.com/SaseQ/discord-mcp
-```
+### ► 🐳 Docker Compose Deployment (Recommended)
 
-#### Build the project
-> NOTE: Maven installation is required to use the mvn command. Full instructions can be found [here](https://www.baeldung.com/install-maven-on-windows-linux-mac).
+This is the recommended method for production deployments, especially with platforms like Coolify.
+
+#### 1. Clone the repository
 ```bash
+git clone https://github.com/yourusername/discord-mcp
 cd discord-mcp
-mvn clean package # The jar file will be available in the /target directory
 ```
 
-#### Configure AI client
-Many code editors and other AI clients use a configuration file to manage MCP servers.
+#### 2. Create environment file
+```bash
+cat > .env << EOF
+DISCORD_TOKEN=your_discord_bot_token_here
+DISCORD_GUILD_ID=optional_default_server_id
+MCP_BEARER_TOKEN=your_generated_bearer_token_here
+EOF
+```
 
-The Discord MPC server can be configured by adding the following to your configuration file.
+#### 3. Deploy with Docker Compose
+```bash
+docker-compose up -d
+```
 
-> NOTE: You will need to create a Discord Bot token to use this server. Instructions on how to create a Discord Bot token can be found [here](https://discordjs.guide/preparations/setting-up-a-bot-application.html#creating-your-bot).
+The server will be available at `http://localhost:8085` with the following endpoints:
+- `/sse` - SSE connection endpoint
+- `/mcp/message` - Message endpoint
+- `/actuator/health` - Health check endpoint
+
+### ► 🌐 HTTP/SSE Client Configuration
+
+Configure your MCP client to connect via HTTP/SSE:
+
 ```json
 {
   "mcpServers": {
     "discord-mcp": {
-      "command": "java",
-      "args": [
-        "-jar",
-        "/absolute/path/to/discord-mcp-0.0.1-SNAPSHOT.jar"
-      ],
-      "env": {
-        "DISCORD_TOKEN": "YOUR_DISCORD_BOT_TOKEN",
-        "DISCORD_GUILD_ID": "OPTIONAL_DEFAULT_SERVER_ID"
+      "url": "https://your-domain.com:8085/sse",
+      "transport": {
+        "type": "sse"
+      },
+      "headers": {
+        "Authorization": "Bearer YOUR_MCP_BEARER_TOKEN"
       }
     }
   }
 }
 ```
-The `DISCORD_GUILD_ID` environment variable is optional. When provided, it sets a default Discord server ID so any tool that accepts a `guildId` parameter can omit it.
-
-</details>
 
 <details>
     <summary style="font-size: 1.35em; font-weight: bold;">
-        ⚓ Smithery Installation
+        🔧 Manual Build and Run
     </summary>
 
-Install Discord MCP Server automatically via [Smithery](https://smithery.ai/):
+#### Build the project
+> NOTE: Maven installation is required. Full instructions can be found [here](https://www.baeldung.com/install-maven-on-windows-linux-mac).
+
 ```bash
-npx -y @smithery/cli@latest install @SaseQ/discord-mcp --client <CLIENT_NAME> --key <YOUR_SMITHERY_KEY>
+git clone https://github.com/yourusername/discord-mcp
+cd discord-mcp
+mvn clean package
 ```
 
-</details>
-
-<details>
-    <summary style="font-size: 1.35em; font-weight: bold;">
-        🖲 Cursor Installation
-    </summary>
-
-Go to: `Settings` -> `Cursor Settings` -> `MCP` -> `Add new global MCP server`
-
-Pasting the following configuration into your Cursor `~/.cursor/mcp.json` file is the recommended approach. You may also install in a specific project by creating `.cursor/mcp.json` in your project folder. See [Cursor MCP docs](https://docs.cursor.com/context/model-context-protocol) for more info.
-```json
-{
-  "mcpServers": {
-    "mcp-server": {
-      "command": "docker",
-      "args": [
-        "run", "--rm", "-i",
-        "-e", "DISCORD_TOKEN=<YOUR_DISCORD_BOT_TOKEN>",
-        "-e", "DISCORD_GUILD_ID=<OPTIONAL_DEFAULT_SERVER_ID>",
-        "saseq/discord-mcp:latest"
-      ]
-    }
-  }
-}
-```
-
-</details>
-
-<details>
-    <summary style="font-size: 1.35em; font-weight: bold;">
-        ⌨️ Claude Code Installation
-    </summary>
-
-Run this command. See [Claude Code MCP docs](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/tutorials#set-up-model-context-protocol-mcp) for more info.
+#### Run locally
 ```bash
-claude mcp add mcp-server -- docker run --rm -i -e DISCORD_TOKEN=<YOUR_DISCORD_BOT_TOKEN> -e DISCORD_GUILD_ID=<OPTIONAL_DEFAULT_SERVER_ID> saseq/discord-mcp:latest
+export DISCORD_TOKEN="your_discord_bot_token"
+export DISCORD_GUILD_ID="optional_default_server_id"
+export MCP_BEARER_TOKEN="your_generated_bearer_token"
+
+java -jar target/discord-mcp-0.0.1.jar
 ```
+
+The server will start on `http://localhost:8085`
+
+</details>
+
+<details>
+    <summary style="font-size: 1.35em; font-weight: bold;">
+        ☁️ Coolify Deployment
+    </summary>
+
+Deploy to Coolify with these steps:
+
+1. **Import the repository** into Coolify from Git
+2. **Set deployment type** to Docker Compose
+3. **Configure environment variables** in Coolify UI:
+   - `DISCORD_TOKEN`: Your Discord bot token
+   - `DISCORD_GUILD_ID`: (Optional) Default Discord server ID
+   - `MCP_BEARER_TOKEN`: Your generated bearer token
+4. **Configure domain**: Set as `https://your-domain.com:8085`
+   - ⚠️ **Important**: Include port `:8085` in the domain configuration
+5. **Deploy**: Coolify will build and deploy the service
 
 </details>
 
@@ -180,6 +185,37 @@ claude mcp add mcp-server -- docker run --rm -i -e DISCORD_TOKEN=<YOUR_DISCORD_B
 
 >If `DISCORD_GUILD_ID` is set, the `guildId` parameter becomes optional for all tools above.
 
-<hr>
+## 🔐 Security
+
+### Authentication
+
+All HTTP/SSE endpoints (`/sse` and `/mcp/message`) are protected with Bearer token authentication. Clients must include the authorization header:
+
+```
+Authorization: Bearer YOUR_MCP_BEARER_TOKEN
+```
+
+### Best Practices
+
+- **Generate strong tokens**: Use the provided commands to generate cryptographically secure tokens
+- **Rotate tokens regularly**: Change your `MCP_BEARER_TOKEN` periodically
+- **Use HTTPS in production**: Always deploy behind SSL/TLS (Coolify handles this automatically)
+- **Store tokens securely**: Use environment variables or secrets management systems
+- **Never commit tokens**: Add `.env` to `.gitignore`
+
+### Health Check
+
+The `/actuator/health` endpoint is publicly accessible for monitoring and does not require authentication.
+
+## 🏗️ Architecture
+
+- **Framework**: Spring Boot 3.3.6
+- **MCP Integration**: Spring AI MCP Server with WebMVC SSE transport
+- **Discord API**: JDA (Java Discord API) 5.6.1
+- **Security**: Spring Security with custom Bearer token authentication
+- **Transport**: HTTP/SSE (Server-Sent Events)
+- **Port**: 8085
+
+## 📚 Additional Resources
 
 A more detailed examples can be found in the [Wiki](https://github.com/SaseQ/discord-mcp/wiki).
