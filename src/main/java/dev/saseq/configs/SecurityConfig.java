@@ -38,6 +38,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.disable()) // Disable CORS - allow all origins
                 .httpBasic(httpBasic -> httpBasic.disable())
                 .formLogin(formLogin -> formLogin.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -64,6 +65,10 @@ public class SecurityConfig {
                 HttpServletResponse httpResponse = (HttpServletResponse) response;
 
                 String requestUri = httpRequest.getRequestURI();
+                String method = httpRequest.getMethod();
+
+                System.out.println("Bearer token filter: " + method + " " + requestUri);
+                System.out.println("Authorization header: " + httpRequest.getHeader("Authorization"));
 
                 // Skip authentication for health check
                 if (requestUri.equals("/actuator/health")) {
@@ -76,24 +81,32 @@ public class SecurityConfig {
                     String authHeader = httpRequest.getHeader("Authorization");
 
                     if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                        System.out.println("Authentication failed: Missing or invalid Authorization header");
                         httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                        httpResponse.getWriter().write("Missing or invalid Authorization header");
+                        httpResponse.setContentType("application/json");
+                        httpResponse.getWriter().write("{\"error\":\"Missing or invalid Authorization header\"}");
                         return;
                     }
 
                     String token = authHeader.substring(7);
 
                     if (expectedBearerToken == null || expectedBearerToken.isEmpty()) {
+                        System.out.println("Authentication failed: Bearer token not configured on server");
                         httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                        httpResponse.getWriter().write("Server configuration error: Bearer token not configured");
+                        httpResponse.setContentType("application/json");
+                        httpResponse.getWriter().write("{\"error\":\"Server configuration error: Bearer token not configured\"}");
                         return;
                     }
 
                     if (!token.equals(expectedBearerToken)) {
+                        System.out.println("Authentication failed: Invalid Bearer token");
                         httpResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                        httpResponse.getWriter().write("Invalid Bearer token");
+                        httpResponse.setContentType("application/json");
+                        httpResponse.getWriter().write("{\"error\":\"Invalid Bearer token\"}");
                         return;
                     }
+
+                    System.out.println("Authentication successful for " + requestUri);
                 }
 
                 chain.doFilter(request, response);
