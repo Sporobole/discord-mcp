@@ -9,6 +9,12 @@ services:
       - DISCORD_TOKEN=${DISCORD_TOKEN}
       - DISCORD_GUILD_ID=${DISCORD_GUILD_ID}
       - MCP_BEARER_TOKEN=${MCP_BEARER_TOKEN}
+    labels:
+      - "traefik.http.services.discord-mcp.loadbalancer.server.port=8085"
+      - "traefik.http.routers.discord-mcp.middlewares=discord-mcp-timeout"
+      - "traefik.http.middlewares.discord-mcp-timeout.buffering.maxRequestBodyBytes=0"
+      - "traefik.http.middlewares.discord-mcp-timeout.buffering.memRequestBodyBytes=0"
+      - "traefik.http.middlewares.discord-mcp-timeout.buffering.retryExpression=IsNetworkError() && Attempts() < 2"
     healthcheck:
       test:
         [
